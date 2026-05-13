@@ -6,13 +6,31 @@
     <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
-    <script>
+<script>
+    let unreadCount = 0;
+    let lastMessageCount = 0;
+
+    function checkNewMessages() {
+        const stored = localStorage.getItem('trello_chat_messages_v3');
+        if (stored) {
+            const messages = JSON.parse(stored);
+            if (messages.length > lastMessageCount) {
+                unreadCount = messages.length - lastMessageCount;
+            }
+        }
+    }
+
     window.TrelloPowerUp.initialize({
         'board-buttons': function(t, options) {
             return [{
-                icon: { dark: 'https://cdn-icons-png.flaticon.com/512/1995/1995572.png', light: 'https://cdn-icons-png.flaticon.com/512/1995/1995572.png' },
+                icon: {
+                    dark: 'https://raw.githubusercontent.com/chris73itsec/trello-chat/refs/heads/main/icona-chat-bianca.png',
+                    light: 'https://raw.githubusercontent.com/chris73itsec/trello-chat/refs/heads/main/icona-chat-nera.png'
+                },
                 text: 'Apri Chat',
                 callback: function(t) {
+                    lastMessageCount = JSON.parse(localStorage.getItem('trello_chat_messages_v3') || '[]').length;
+                    unreadCount = 0;
                     return t.popup({
                         title: 'Chat di Squadra',
                         url: 'https://silver-centaur-21bb7e.netlify.app/index.html',
@@ -23,6 +41,13 @@
             }];
         }
     });
-    </script>
+
+    setInterval(() => {
+        checkNewMessages();
+        if (unreadCount > 0) {
+            TrelloPowerUp.updateUnread(unreadCount);
+        }
+    }, 5000);
+</script>
 </body>
 </html>
