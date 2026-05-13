@@ -88,26 +88,41 @@
     <script src="https://p.trellocdn.com/power-up.min.js"></script>
 
     <script>
-        // Inizializza il Power-Up
+        // Inizializzazione del Power-Up di Trello
         window.TrelloPowerUp.initialize({
+            // Pulsante nella barra superiore del board
+            'board-buttons': function(t, options) {
+                return [{
+                    icon: {
+                        dark: 'https://cdn-icons-png.flaticon.com/512/1995/1995572.png',
+                        light: 'https://cdn-icons-png.flaticon.com/512/1995/1995572.png'
+                    },
+                    text: 'Chat',
+                    callback: function(t) {
+                        return t.modal({
+                            title: 'Chat di Squadra',
+                            url: 'https://silver-centaur-21bb7e.netlify.app/index.html',
+                            height: 500,
+                            fullscreen: false
+                        });
+                    }
+                }];
+            },
+            // Impostazioni (opzionale, per futuri sviluppi)
             'show-settings': function(t, options) {
                 return t.popup({
-                    title: 'Impostazioni chat',
+                    title: 'Impostazioni Chat',
                     url: './settings.html',
                     height: 200
                 });
             }
         });
 
-        // --- Gestione della chat (salva i messaggi in localStorage del browser) ---
-        // ATTENZIONE: i messaggi sono visibili SOLO a te.
-        // Per una chat condivisa con tutti i collaboratori servirebbe un backend (Firebase o simile).
-        
+        // --- Gestione locale della chat (solo per te) ---
         const messagesContainer = document.getElementById('messages');
         const messageInput = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
         
-        // Carica i messaggi salvati
         function loadMessages() {
             const stored = localStorage.getItem('trello_chat_messages');
             if (stored) {
@@ -117,14 +132,13 @@
                     const msgDiv = document.createElement('div');
                     msgDiv.className = 'message';
                     if (msg.isOwn) msgDiv.classList.add('own');
-                    msgDiv.innerHTML = `<div>${msg.text}</div><small>${msg.time}</small>`;
+                    msgDiv.innerHTML = `<div>${escapeHtml(msg.text)}</div><small>${msg.time}</small>`;
                     messagesContainer.appendChild(msgDiv);
                 });
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
             }
         }
         
-        // Salva un nuovo messaggio
         function addMessage(text, isOwn = true) {
             const messages = JSON.parse(localStorage.getItem('trello_chat_messages') || '[]');
             messages.push({
@@ -134,6 +148,15 @@
             });
             localStorage.setItem('trello_chat_messages', JSON.stringify(messages));
             loadMessages();
+        }
+        
+        function escapeHtml(str) {
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
         }
         
         sendBtn.addEventListener('click', () => {
