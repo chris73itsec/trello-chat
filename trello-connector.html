@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Trello Connector</title>
+    <script src="https://p.trellocdn.com/power-up.min.js"></script>
+</head>
+<body>
+    <script>
+    window.TrelloPowerUp.initialize({
+        'board-buttons': function(t, options) {
+            return [{
+                icon: { dark: 'https://cdn-icons-png.flaticon.com/512/1995/1995572.png', light: 'https://cdn-icons-png.flaticon.com/512/1995/1995572.png' },
+                text: 'Apri Chat',
+                callback: function(t) {
+                    return t.modal({
+                        title: 'Chat di Squadra',
+                        url: 'https://silver-centaur-21bb7e.netlify.app/index.html', // La tua vera chat
+                        height: 500,
+                        fullscreen: false
+                    });
+                }
+            }];
+        }
+    });
+    </script>
+</body>
+</html>
