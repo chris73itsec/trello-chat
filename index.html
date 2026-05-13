@@ -11,13 +11,30 @@
         .message.own { background: #0052cc; color: white; align-self: flex-end; }
         .message .author { font-weight: bold; font-size: 12px; margin-bottom: 4px; }
         .message.own .author { color: #e9f0ff; }
-        .message .text { font-size: 14px; }
+        .message .text { font-size: 14px; white-space: pre-wrap; word-break: break-word; }
         .reply-link { font-size: 10px; margin-top: 4px; cursor: pointer; opacity: 0.6; }
         .reply-link:hover { opacity: 1; text-decoration: underline; }
         .message.own .reply-link { color: #e9f0ff; }
-        .input-area { display: flex; padding: 12px; border-top: 1px solid #eee; gap: 8px; background: white; }
-        input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 24px; font-size: 14px; font-family: inherit; }
-        button { background: #0052cc; color: white; border: none; padding: 0 20px; border-radius: 24px; cursor: pointer; font-weight: bold; }
+        .input-area { display: flex; padding: 12px; border-top: 1px solid #eee; gap: 8px; background: white; align-items: flex-end; }
+        .message-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 24px;
+            font-size: 14px;
+            font-family: inherit;
+            background: white;
+            min-height: 40px;
+            max-height: 120px;
+            overflow-y: auto;
+            line-height: 1.4;
+            cursor: text;
+        }
+        .message-input:empty:before {
+            content: attr(placeholder);
+            color: #888;
+        }
+        button { background: #0052cc; color: white; border: none; padding: 0 20px; border-radius: 24px; cursor: pointer; font-weight: bold; height: 40px; }
         button:hover { background: #0747a6; }
         .loading { text-align: center; padding: 20px; color: #666; }
         .hidden { display: none; }
@@ -29,7 +46,7 @@
             <div class="loading">Caricamento chat...</div>
         </div>
         <div class="input-area">
-            <input type="text" id="messageInput" placeholder="Scrivi un messaggio... (Shift+Enter per andare a capo)">
+            <div id="messageInput" class="message-input" contenteditable="true" placeholder="Scrivi un messaggio... (Shift+Enter per andare a capo)"></div>
             <button id="sendBtn">Invia</button>
         </div>
     </div>
@@ -40,6 +57,16 @@
         
         let currentUser = null;
         let currentUserName = null;
+
+        function getMessageText() {
+            const div = document.getElementById('messageInput');
+            return div.innerText || '';
+        }
+
+        function setMessageText(text) {
+            const div = document.getElementById('messageInput');
+            div.innerText = text;
+        }
 
         function loadMessages() {
             const stored = localStorage.getItem('trello_chat_messages_v3');
@@ -120,16 +147,15 @@
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('reply-link')) {
                 const userName = e.target.getAttribute('data-reply-to');
-                const input = document.getElementById('messageInput');
-                input.value = `@${userName} `;
-                input.focus();
+                setMessageText(`@${userName} `);
+                document.getElementById('messageInput').focus();
             }
         });
 
         document.getElementById('sendBtn').addEventListener('click', () => {
-            const input = document.getElementById('messageInput');
-            sendMessage(input.value);
-            input.value = '';
+            const text = getMessageText();
+            sendMessage(text);
+            setMessageText('');
         });
 
         document.getElementById('messageInput').addEventListener('keydown', (e) => {
@@ -137,6 +163,7 @@
                 e.preventDefault();
                 document.getElementById('sendBtn').click();
             }
+            // Shift+Enter crea naturalmente un nuovo <br> nel div contenteditable
         });
 
         init();
