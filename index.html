@@ -33,8 +33,30 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    
+    <!-- Trello SDK -->
     <script src="https://p.trellocdn.com/power-up.min.js"></script>
+    
     <script>
+        // Configurazione Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyC6EcAZtPvRvexyGhihp0F4d-BPJFmOWII",
+            authDomain: "trello-chat-88193.firebaseapp.com",
+            databaseURL: "https://trello-chat-88193-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "trello-chat-88193",
+            storageBucket: "trello-chat-88193.firebasestorage.app",
+            messagingSenderId: "87593800283",
+            appId: "1:87593800283:web:cc99ac6010ac9b1a7e657e"
+        };
+
+        // Inizializza Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const messagesRef = database.ref('messages');
+
         const t = window.TrelloPowerUp.iframe();
         
         let currentUser = null;
@@ -47,47 +69,46 @@
         }
 
         function loadMessages() {
-            const stored = localStorage.getItem('trello_chat_messages_v3');
-            const messagesContainer = document.getElementById('messages');
-            if (stored && JSON.parse(stored).length > 0) {
-                const messages = JSON.parse(stored);
-                messagesContainer.innerHTML = '';
-                messages.forEach(msg => {
-                    const msgDiv = document.createElement('div');
-                    msgDiv.className = 'message';
-                    if (msg.userId === currentUser) msgDiv.classList.add('own');
-                    
-                    const date = new Date(msg.timestamp);
-                    const months = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
-                    const formattedDate = `${date.getDate().toString().padStart(2,'0')} ${months[date.getMonth()]} ${date.getFullYear().toString().slice(-2)}`;
-                    
-                    msgDiv.innerHTML = `
-                        <div class="author">${escapeHtml(msg.userName)} - ${formattedDate} - ${msg.time}</div>
-                        <div class="text">${escapeHtml(msg.text)}</div>
-                        <div class="reply-link" data-reply-to="${escapeHtml(msg.userName)}">Rispondi a ${escapeHtml(msg.userName)}</div>
-                    `;
-                    messagesContainer.appendChild(msgDiv);
-                });
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            } else {
-                messagesContainer.innerHTML = '<div class="loading">Nessun messaggio. Scrivi il primo!</div>';
-            }
+            messagesRef.on('value', (snapshot) => {
+                const messagesContainer = document.getElementById('messages');
+                const data = snapshot.val();
+                
+                if (data) {
+                    const messages = Object.entries(data).map(([id, msg]) => ({ id, ...msg })).sort((a, b) => a.timestamp - b.timestamp);
+                    messagesContainer.innerHTML = '';
+                    messages.forEach(msg => {
+                        const msgDiv = document.createElement('div');
+                        msgDiv.className = 'message';
+                        if (msg.userId === currentUser) msgDiv.classList.add('own');
+                        
+                        const date = new Date(msg.timestamp);
+                        const months = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+                        const formattedDate = `${date.getDate().toString().padStart(2,'0')} ${months[date.getMonth()]} ${date.getFullYear().toString().slice(-2)}`;
+                        
+                        msgDiv.innerHTML = `
+                            <div class="author">${escapeHtml(msg.userName)} - ${formattedDate} - ${msg.time}</div>
+                            <div class="text">${escapeHtml(msg.text)}</div>
+                            <div class="reply-link" data-reply-to="${escapeHtml(msg.userName)}">Rispondi a ${escapeHtml(msg.userName)}</div>
+                        `;
+                        messagesContainer.appendChild(msgDiv);
+                    });
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                } else {
+                    messagesContainer.innerHTML = '<div class="loading">Nessun messaggio. Scrivi il primo!</div>';
+                }
+            });
         }
 
         function sendMessage(text) {
             if (!text.trim() || !currentUser) return;
             
-            const stored = localStorage.getItem('trello_chat_messages_v3');
-            const messages = stored ? JSON.parse(stored) : [];
-            messages.push({
+            messagesRef.push({
                 userId: currentUser,
                 userName: currentUserName,
                 text: text.trim(),
                 time: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
                 timestamp: Date.now()
             });
-            localStorage.setItem('trello_chat_messages_v3', JSON.stringify(messages));
-            loadMessages();
         }
 
         function escapeHtml(str) {
