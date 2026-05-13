@@ -31,10 +31,10 @@
                 callback: function(t) {
                     lastMessageCount = JSON.parse(localStorage.getItem('trello_chat_messages_v3') || '[]').length;
                     unreadCount = 0;
-                    return t.popup({
+                    return t.modal({
                         title: 'Chat di Squadra',
                         url: 'https://silver-centaur-21bb7e.netlify.app/index.html',
-                        height: 700,
+                        height: 800,
                         width: 900
                     });
                 }
