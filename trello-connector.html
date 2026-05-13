@@ -31,7 +31,7 @@
                 callback: function(t) {
                     lastMessageCount = JSON.parse(localStorage.getItem('trello_chat_messages_v3') || '[]').length;
                     unreadCount = 0;
-                    return t.modal({
+                    return t.popup({
                         title: 'Chat Bacheca',
                         url: 'https://chris73itsec.github.io/trello-chat/index.html',
                         height: 900,
