@@ -12,9 +12,11 @@
         .message .author { font-weight: bold; font-size: 12px; margin-bottom: 4px; }
         .message.own .author { color: #e9f0ff; }
         .message .text { font-size: 14px; }
-        .message .time { font-size: 10px; opacity: 0.6; margin-top: 4px; text-align: right; }
+        .reply-link { font-size: 10px; margin-top: 4px; cursor: pointer; opacity: 0.6; }
+        .reply-link:hover { opacity: 1; text-decoration: underline; }
+        .message.own .reply-link { color: #e9f0ff; }
         .input-area { display: flex; padding: 12px; border-top: 1px solid #eee; gap: 8px; background: white; }
-        input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 24px; font-size: 14px; }
+        input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 24px; font-size: 14px; font-family: inherit; }
         button { background: #0052cc; color: white; border: none; padding: 0 20px; border-radius: 24px; cursor: pointer; font-weight: bold; }
         button:hover { background: #0747a6; }
         .loading { text-align: center; padding: 20px; color: #666; }
@@ -27,35 +29,36 @@
             <div class="loading">Caricamento chat...</div>
         </div>
         <div class="input-area">
-            <input type="text" id="messageInput" placeholder="Scrivi un messaggio...">
+            <input type="text" id="messageInput" placeholder="Scrivi un messaggio... (Shift+Enter per andare a capo)">
             <button id="sendBtn">Invia</button>
         </div>
     </div>
 
     <script src="https://p.trellocdn.com/power-up.min.js"></script>
     <script>
-        // Inizializza il contesto di Trello
         const t = window.TrelloPowerUp.iframe();
         
         let currentUser = null;
         let currentUserName = null;
-        let messagesRef = null;
 
-        // Funzione per ottenere i messaggi salvati (versione locale, condivisa solo tra le tue schede)
         function loadMessages() {
             const stored = localStorage.getItem('trello_chat_messages_v3');
             const messagesContainer = document.getElementById('messages');
-            if (stored) {
+            if (stored && JSON.parse(stored).length > 0) {
                 const messages = JSON.parse(stored);
                 messagesContainer.innerHTML = '';
                 messages.forEach(msg => {
                     const msgDiv = document.createElement('div');
                     msgDiv.className = 'message';
                     if (msg.userId === currentUser) msgDiv.classList.add('own');
+                    
+                    const date = new Date(msg.timestamp);
+                    const formattedDate = date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                    
                     msgDiv.innerHTML = `
-                        <div class="author">${escapeHtml(msg.userName)}</div><br>
+                        <div class="author">${escapeHtml(msg.userName)} - ${formattedDate} - ${msg.time}</div>
                         <div class="text">${escapeHtml(msg.text)}</div>
-                        <div class="time">${msg.time}</div>
+                        <div class="reply-link" data-reply-to="${escapeHtml(msg.userName)}">Rispondi a ${escapeHtml(msg.userName)}</div>
                     `;
                     messagesContainer.appendChild(msgDiv);
                 });
@@ -91,15 +94,12 @@
             });
         }
 
-        // Inizializzazione: recupera il nome dell'utente Trello
         async function init() {
             try {
-                // Ottieni il contesto per avere l'ID del membro
                 const context = t.getContext();
                 currentUser = context.member;
                 
                 if (currentUser && currentUser !== 'notLoggedIn') {
-                    // Recupera il nome completo dell'utente
                     const member = await t.member('fullName');
                     currentUserName = member.fullName || 'Utente';
                 } else {
@@ -107,9 +107,7 @@
                     currentUser = 'guest_' + Date.now();
                 }
                 
-                // Carica i messaggi
                 loadMessages();
-                
             } catch (err) {
                 console.error('Errore init:', err);
                 currentUserName = 'Utente';
@@ -118,18 +116,28 @@
             }
         }
 
-        // Event listeners
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('reply-link')) {
+                const userName = e.target.getAttribute('data-reply-to');
+                const input = document.getElementById('messageInput');
+                input.value = `@${userName} `;
+                input.focus();
+            }
+        });
+
         document.getElementById('sendBtn').addEventListener('click', () => {
             const input = document.getElementById('messageInput');
             sendMessage(input.value);
             input.value = '';
         });
 
-        document.getElementById('messageInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') document.getElementById('sendBtn').click();
+        document.getElementById('messageInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('sendBtn').click();
+            }
         });
 
-        // Avvia
         init();
     </script>
 </body>
