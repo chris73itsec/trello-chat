@@ -53,7 +53,7 @@
                     msgDiv.className = 'message';
                     if (msg.userId === currentUser) msgDiv.classList.add('own');
                     msgDiv.innerHTML = `
-                        <div class="author">${escapeHtml(msg.userName)}</div>
+                        <div class="author">${escapeHtml(msg.userName)}</div><br>
                         <div class="text">${escapeHtml(msg.text)}</div>
                         <div class="time">${msg.time}</div>
                     `;
